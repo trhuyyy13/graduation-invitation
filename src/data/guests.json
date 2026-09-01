@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Nguyễn Văn Minh",
+    "displayName": "Anh Minh",
+    "salutation": "Anh",
+    "selfRef": "em",
+    "active": true
+  },
+  {
+    "name": "Nguyễn Đức Anh",
+    "displayName": "Đức Anh",
+    "salutation": "Bạn",
+    "selfRef": "mình",
+    "active": true
+  },
+  {
+    "name": "Gia đình cô Lan",
+    "displayName": "Gia đình cô Lan",
+    "salutation": "Cô",
+    "selfRef": "con",
+    "active": true
+  },
+  {
+    "name": "Trần Trung Kiên",
+    "displayName": "Em Kiên",
+    "salutation": "Anh",
+    "selfRef": "em",
+    "active": true
+  }
+]

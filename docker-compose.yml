@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3100:3000"
+    volumes:
+      - ./messages.json:/app/messages.json
+      - ./src/data/guests.json:/app/src/data/guests.json
+    command: npm run dev -- -H 0.0.0.0
