@@ -1,8 +1,4 @@
-import fs from "fs";
-import { promises as fsp } from "fs";
-import path from "path";
-
-const GUESTS_FILE = path.join(process.cwd(), "src/data/guests.json");
+import { getSupabase } from "@/lib/supabase";
 
 export type GuestEntry = {
   name: string;
@@ -23,53 +19,69 @@ export const genericGuest: Guest = {
   active: true,
 };
 
-function parseGuests(raw: string): GuestEntry[] {
-  const parsed = JSON.parse(raw);
-  return Array.isArray(parsed) ? parsed : [];
-}
+type GuestRow = {
+  name: string;
+  display_name: string;
+  salutation: string;
+  self_ref: string;
+  active: boolean;
+};
 
-function readGuestsSync(): GuestEntry[] {
-  try {
-    return parseGuests(fs.readFileSync(GUESTS_FILE, "utf-8"));
-  } catch {
-    return [];
-  }
-}
-
+/**
+ * Slug is a guest's 1-based position among rows ordered by `id`, not a
+ * stored field — so a new guest just gets appended, no numbering by hand.
+ * writeGuests replaces the whole table so the array order it's given always
+ * becomes the new `id` order. Never reorder or delete existing entries, or
+ * everyone's link after that point shifts; set "active": false to retire a
+ * guest instead.
+ */
 export async function readGuests(): Promise<GuestEntry[]> {
-  try {
-    return parseGuests(await fsp.readFile(GUESTS_FILE, "utf-8"));
-  } catch {
-    return [];
-  }
+  const { data, error } = await getSupabase()
+    .from("guests")
+    .select("name, display_name, salutation, self_ref, active")
+    .order("id", { ascending: true });
+  if (error) throw error;
+
+  return (data as GuestRow[]).map((row) => ({
+    name: row.name,
+    displayName: row.display_name,
+    salutation: row.salutation,
+    selfRef: row.self_ref,
+    active: row.active,
+  }));
 }
 
 export async function writeGuests(guests: GuestEntry[]): Promise<void> {
-  await fsp.writeFile(GUESTS_FILE, JSON.stringify(guests, null, 2) + "\n", "utf-8");
+  const supabase = getSupabase();
+
+  const { error: deleteError } = await supabase.from("guests").delete().gte("id", 0);
+  if (deleteError) throw deleteError;
+
+  if (guests.length === 0) return;
+
+  const { error: insertError } = await supabase.from("guests").insert(
+    guests.map((guest) => ({
+      name: guest.name,
+      display_name: guest.displayName,
+      salutation: guest.salutation,
+      self_ref: guest.selfRef,
+      active: guest.active,
+    }))
+  );
+  if (insertError) throw insertError;
 }
 
-/**
- * Slug is a guest's 1-based position in data/guests.json, not a stored
- * field — so a new guest just gets appended to the file, no numbering by hand.
- * Never reorder or delete existing rows, or everyone's link after that point
- * shifts; set "active": false to retire a guest instead.
- */
-export function getGuestBySlug(slug: string): Guest {
+export async function getGuestBySlug(slug: string): Promise<Guest> {
   const index = Number(slug);
   if (!Number.isInteger(index) || index < 1) return genericGuest;
 
-  const entry = readGuestsSync()[index - 1];
+  const entry = (await readGuests())[index - 1];
   if (!entry || !entry.active) return genericGuest;
 
   return { ...entry, slug: String(index) };
 }
 
-export function getAllGuestSlugs(): string[] {
-  return readGuestsSync()
-    .map((guest, i) => (guest.active ? String(i + 1) : null))
-    .filter((slug): slug is string => slug !== null);
-}
-
-export function getAllGuestsWithSlugs(): Guest[] {
-  return readGuestsSync().map((guest, i) => ({ ...guest, slug: String(i + 1) }));
+export async function getAllGuestsWithSlugs(): Promise<Guest[]> {
+  const guests = await readGuests();
+  return guests.map((guest, i) => ({ ...guest, slug: String(i + 1) }));
 }
