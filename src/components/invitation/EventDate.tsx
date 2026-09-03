@@ -3,9 +3,10 @@ import { GraduationCap, Calendar, MapPin, Phone, ArrowRight, MessageCircleHeart 
 import CardBackdrop from "./CardBackdrop";
 import RevealOnScroll from "./RevealOnScroll";
 import { eventConfig } from "@/config/event";
+import { getEventSettings } from "@/lib/eventSettings";
 import type { Guest } from "@/lib/guests";
 
-export default function EventDate({
+export default async function EventDate({
   guest,
   nextHref,
   backHref,
@@ -14,6 +15,8 @@ export default function EventDate({
   nextHref: string;
   backHref: string;
 }) {
+  const settings = await getEventSettings();
+
   return (
     <CardBackdrop
       backHref={backHref}
@@ -59,10 +62,10 @@ export default function EventDate({
               Thời gian
             </p>
             <p className="mt-1 text-sm text-[#4d4038]">
-              {eventConfig.startTime} – {eventConfig.endTime}, {eventConfig.weekdayLabel}
+              {settings.startTime} – {settings.endTime}, {settings.weekdayLabel}
             </p>
             <p className="text-sm font-semibold text-[#2b2320]">
-              {eventConfig.day}.{eventConfig.month}.{eventConfig.yearLabel}
+              {settings.day}.{settings.month}.{settings.yearLabel}
             </p>
           </div>
         </div>
@@ -75,9 +78,9 @@ export default function EventDate({
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-maroon">
               Địa điểm
             </p>
-            <p className="mt-1 text-sm font-semibold text-[#2b2320]">{eventConfig.venue}</p>
-            <p className="text-sm text-[#6b6058]">{eventConfig.university}</p>
-            <p className="text-sm text-[#6b6058]">{eventConfig.address}</p>
+            <p className="mt-1 text-sm font-semibold text-[#2b2320]">{settings.venue}</p>
+            <p className="text-sm text-[#6b6058]">{settings.university}</p>
+            <p className="text-sm text-[#6b6058]">{settings.address}</p>
           </div>
         </div>
 
@@ -90,10 +93,10 @@ export default function EventDate({
               Liên hệ
             </p>
             <a
-              href={`tel:${eventConfig.contactPhone.replace(/\./g, "")}`}
+              href={`tel:${settings.contactPhone.replace(/\./g, "")}`}
               className="focus-ring mt-1 inline-block text-sm font-semibold text-[#2b2320] underline-offset-2 hover:underline"
             >
-              {eventConfig.contactPhone}
+              {settings.contactPhone}
             </a>
           </div>
         </div>
@@ -101,7 +104,7 @@ export default function EventDate({
 
       <RevealOnScroll delay={0.2} className="flex w-full max-w-[320px] flex-col gap-3">
         <a
-          href={eventConfig.mapUrl}
+          href={settings.mapUrl}
           target="_blank"
           rel="noreferrer"
           className="focus-ring mt-6 inline-flex min-h-[48px] w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-[#5c0c0d] px-3 text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-warm-white shadow-[0_10px_24px_rgba(30,6,6,0.35)] transition-colors hover:bg-[#4c0709] sm:gap-2 sm:px-6 sm:text-xs sm:tracking-[0.3em]"

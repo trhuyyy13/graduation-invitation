@@ -20,7 +20,26 @@ type StoredMessage = {
   submittedAt: string;
 };
 
+type EventSettingsForm = {
+  date: string;
+  startTime: string;
+  endTime: string;
+  venue: string;
+  university: string;
+  address: string;
+  contactPhone: string;
+};
+
 const emptyForm = { name: "", displayName: "", salutation: "", selfRef: "" };
+const emptyEventSettings: EventSettingsForm = {
+  date: "",
+  startTime: "",
+  endTime: "",
+  venue: "",
+  university: "",
+  address: "",
+  contactPhone: "",
+};
 
 function formatDate(iso: string) {
   try {
@@ -44,6 +63,10 @@ export default function AdminPage() {
   const [newGuest, setNewGuest] = useState(emptyForm);
   const [addingGuest, setAddingGuest] = useState(false);
 
+  const [eventSettings, setEventSettings] = useState<EventSettingsForm>(emptyEventSettings);
+  const [savingEventSettings, setSavingEventSettings] = useState(false);
+  const [eventSettingsSaved, setEventSettingsSaved] = useState(false);
+
   useEffect(() => {
     setOrigin(window.location.origin);
     void loadData();
@@ -56,8 +79,36 @@ export default function AdminPage() {
       const data = await res.json();
       setGuests(data.guests);
       setMessages(data.messages);
+      if (data.eventSettings) {
+        const s = data.eventSettings;
+        setEventSettings({
+          date: s.date,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          venue: s.venue,
+          university: s.university,
+          address: s.address,
+          contactPhone: s.contactPhone,
+        });
+      }
     }
     setLoading(false);
+  }
+
+  async function handleSaveEventSettings(event: FormEvent) {
+    event.preventDefault();
+    setSavingEventSettings(true);
+    setEventSettingsSaved(false);
+    const res = await fetch("/api/admin/event-settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(eventSettings),
+    });
+    setSavingEventSettings(false);
+    if (res.ok) {
+      setEventSettingsSaved(true);
+      setTimeout(() => setEventSettingsSaved(false), 2000);
+    }
   }
 
   async function handleLogout() {
@@ -147,6 +198,114 @@ export default function AdminPage() {
           <p className="mt-8 text-sm text-[#6b6058]">Đang tải...</p>
         ) : (
           <>
+            {/* Event settings */}
+            <section className="mt-8 rounded-2xl bg-white p-5 shadow-[0_10px_24px_rgba(60,20,10,0.08)] sm:p-6">
+              <h2 className="font-serif text-lg font-semibold text-[#452420]">
+                Thông tin sự kiện
+              </h2>
+
+              <form
+                onSubmit={handleSaveEventSettings}
+                className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
+              >
+                <label className="flex flex-col gap-1 text-xs font-semibold text-[#6b6058]">
+                  Ngày tổ chức
+                  <input
+                    required
+                    type="date"
+                    value={eventSettings.date}
+                    onChange={(e) =>
+                      setEventSettings((f) => ({ ...f, date: e.target.value }))
+                    }
+                    className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex flex-col gap-1 text-xs font-semibold text-[#6b6058]">
+                    Giờ bắt đầu
+                    <input
+                      required
+                      type="time"
+                      value={eventSettings.startTime}
+                      onChange={(e) =>
+                        setEventSettings((f) => ({ ...f, startTime: e.target.value }))
+                      }
+                      className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-semibold text-[#6b6058]">
+                    Giờ kết thúc
+                    <input
+                      required
+                      type="time"
+                      value={eventSettings.endTime}
+                      onChange={(e) =>
+                        setEventSettings((f) => ({ ...f, endTime: e.target.value }))
+                      }
+                      className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                    />
+                  </label>
+                </div>
+                <label className="flex flex-col gap-1 text-xs font-semibold text-[#6b6058]">
+                  Địa điểm (hội trường)
+                  <input
+                    required
+                    value={eventSettings.venue}
+                    onChange={(e) =>
+                      setEventSettings((f) => ({ ...f, venue: e.target.value }))
+                    }
+                    className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-semibold text-[#6b6058]">
+                  Trường / cơ sở
+                  <input
+                    required
+                    value={eventSettings.university}
+                    onChange={(e) =>
+                      setEventSettings((f) => ({ ...f, university: e.target.value }))
+                    }
+                    className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-semibold text-[#6b6058] sm:col-span-2">
+                  Địa chỉ chi tiết
+                  <input
+                    required
+                    value={eventSettings.address}
+                    onChange={(e) =>
+                      setEventSettings((f) => ({ ...f, address: e.target.value }))
+                    }
+                    className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-semibold text-[#6b6058]">
+                  Số điện thoại liên hệ
+                  <input
+                    required
+                    value={eventSettings.contactPhone}
+                    onChange={(e) =>
+                      setEventSettings((f) => ({ ...f, contactPhone: e.target.value }))
+                    }
+                    className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                  />
+                </label>
+
+                <div className="flex items-center gap-3 sm:col-span-2">
+                  <button
+                    type="submit"
+                    disabled={savingEventSettings}
+                    className="focus-ring mt-1 inline-flex min-h-[42px] items-center justify-center rounded-full bg-[#5c0c0d] px-6 text-xs font-semibold uppercase tracking-[0.3em] text-warm-white hover:bg-[#4c0709] disabled:opacity-60"
+                  >
+                    {savingEventSettings ? "Đang lưu..." : "Lưu thông tin"}
+                  </button>
+                  {eventSettingsSaved && (
+                    <span className="text-xs font-semibold text-green-700">Đã lưu!</span>
+                  )}
+                </div>
+              </form>
+            </section>
+
             {/* Guests */}
             <section className="mt-8 rounded-2xl bg-white p-5 shadow-[0_10px_24px_rgba(60,20,10,0.08)] sm:p-6">
               <h2 className="font-serif text-lg font-semibold text-[#452420]">
