@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GraduationCap, Calendar, MapPin, Phone, ArrowRight, MessageCircleHeart } from "lucide-react";
 import CardBackdrop from "./CardBackdrop";
 import RevealOnScroll from "./RevealOnScroll";
+import Countdown from "./Countdown";
 import { eventConfig } from "@/config/event";
 import { getEventSettings } from "@/lib/eventSettings";
 import type { Guest } from "@/lib/guests";
@@ -16,6 +17,8 @@ export default async function EventDate({
   backHref: string;
 }) {
   const settings = await getEventSettings();
+  const countdownTargetIso = `${settings.date}T${settings.startTime}:00+07:00`;
+  const countdownLabel = `${settings.startTime}, ${settings.day}.${settings.month}.${settings.yearLabel}`;
 
   return (
     <CardBackdrop
@@ -102,6 +105,10 @@ export default async function EventDate({
         </div>
       </RevealOnScroll>
 
+      <RevealOnScroll delay={0.15} className="mt-6 flex w-full justify-center">
+        <Countdown targetIso={countdownTargetIso} targetLabel={countdownLabel} />
+      </RevealOnScroll>
+
       <RevealOnScroll delay={0.2} className="flex w-full max-w-[320px] flex-col gap-3">
         <a
           href={settings.mapUrl}
@@ -117,7 +124,7 @@ export default async function EventDate({
           href={nextHref}
           className="focus-ring inline-flex min-h-[48px] w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-[#5c0c0d] px-3 text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-warm-white shadow-[0_10px_24px_rgba(30,6,6,0.35)] transition-colors hover:bg-[#4c0709] sm:gap-2 sm:px-6 sm:text-xs sm:tracking-[0.3em]"
         >
-          Đọc và gửi lời nhắn
+          Đọc và viết lưu bút
           <MessageCircleHeart className="h-4 w-4" aria-hidden />
         </Link>
       </RevealOnScroll>

@@ -10,7 +10,7 @@ export async function DELETE(
 
   const messages = await readMessages();
   if (!Number.isInteger(i) || i < 0 || i >= messages.length) {
-    return NextResponse.json({ error: "Không tìm thấy lời nhắn." }, { status: 404 });
+    return NextResponse.json({ error: "Không tìm thấy lưu bút." }, { status: 404 });
   }
 
   messages.splice(i, 1);

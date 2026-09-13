@@ -4,7 +4,7 @@ import PageShell from "@/components/invitation/PageShell";
 import { genericGuest } from "@/lib/guests";
 
 export const metadata: Metadata = {
-  title: "Lễ Tốt Nghiệp Huy Trần — Gửi lời nhắn",
+  title: "Lễ Tốt Nghiệp Huy Trần — Gửi lưu bút",
 };
 
 export default function GenericMessagePage() {

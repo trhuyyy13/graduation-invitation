@@ -41,7 +41,7 @@ function LoginForm() {
         className="w-full max-w-[340px] rounded-2xl bg-white p-8 shadow-[0_14px_30px_rgba(60,20,10,0.12)]"
       >
         <h1 className="font-serif text-2xl font-semibold text-maroon">Đăng nhập quản trị</h1>
-        <p className="mt-1 text-sm text-[#6b6058]">Nhập mật khẩu để quản lý khách mời và lời nhắn.</p>
+        <p className="mt-1 text-sm text-[#6b6058]">Nhập mật khẩu để quản lý khách mời và lưu bút.</p>
 
         <input
           type="password"

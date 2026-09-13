@@ -30,7 +30,7 @@ export const eventConfig = {
     paragraphs: [
       "Vậy là hành trình của {self} tại Bách Khoa cũng đã đi đến một cột mốc thật đặc biệt.\nCó những ngày vui, những lần chạy deadline, những khoảnh khắc đáng nhớ và rất nhiều người đã đồng hành cùng {self} trên chặng đường ấy.",
       "{Self} rất vui nếu có thể gặp {you} trong ngày tốt nghiệp, cùng lưu lại một vài khoảnh khắc của ngày đặc biệt này.",
-      "Và nếu {you} có đôi lời muốn gửi đến {self}, hãy để lại ở phía dưới nhé.\n{Self} sẽ rất trân trọng từng lời nhắn.",
+      "Và nếu {you} có đôi lời muốn gửi đến {self}, hãy để lại ở phía dưới nhé.\n{Self} sẽ rất trân trọng từng dòng lưu bút.",
     ],
     signature: "Huy Trần",
   },

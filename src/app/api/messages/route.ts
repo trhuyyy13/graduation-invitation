@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   const slug = typeof body?.slug === "string" ? body.slug.slice(0, 20) : "";
 
   if (!message) {
-    return NextResponse.json({ error: "Thiếu nội dung lời nhắn." }, { status: 400 });
+    return NextResponse.json({ error: "Thiếu nội dung lưu bút." }, { status: 400 });
   }
 
   const messages = await readMessages();

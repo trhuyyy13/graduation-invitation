@@ -465,11 +465,11 @@ export default function AdminPage() {
             {/* Messages */}
             <section className="mt-6 rounded-2xl bg-white p-5 shadow-[0_10px_24px_rgba(60,20,10,0.08)] sm:p-6">
               <h2 className="font-serif text-lg font-semibold text-[#452420]">
-                Lời nhắn ({messages.length})
+                Lưu bút ({messages.length})
               </h2>
 
               {messages.length === 0 ? (
-                <p className="mt-3 text-sm text-[#6b6058]">Chưa có lời nhắn nào.</p>
+                <p className="mt-3 text-sm text-[#6b6058]">Chưa có lưu bút nào.</p>
               ) : (
                 <div className="mt-4 flex flex-col gap-3">
                   {messages.map((msg) => (

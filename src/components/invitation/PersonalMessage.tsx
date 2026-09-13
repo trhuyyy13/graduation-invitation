@@ -32,7 +32,7 @@ export default function PersonalMessage({
         <span className="mt-4 h-1.5 w-1.5 rotate-45 bg-[#c3a06c]" aria-hidden />
 
         <h1 className="mt-5 max-w-[280px] text-center font-serif text-[1.7rem] font-semibold uppercase leading-tight tracking-wide text-maroon sm:max-w-[320px] sm:text-3xl">
-          Đôi lời nhắn gửi
+          Đôi dòng lưu bút
         </h1>
         <span className="mt-3 h-1.5 w-1.5 rotate-45 bg-[#c3a06c]" aria-hidden />
 
@@ -57,7 +57,7 @@ export default function PersonalMessage({
         <CornerAccents />
 
         <h2 className="font-serif text-base font-semibold uppercase leading-snug tracking-normal text-maroon sm:text-xl sm:tracking-wide">
-          Gửi {eventConfig.graduateFirstName} một lời nhắn
+          Gửi {eventConfig.graduateFirstName} một trang lưu bút
         </h2>
         <p className="mt-2 text-sm text-[#6b6058]">
           {personalize("Một vài dòng từ {you} sẽ là một phần rất đẹp của ngày hôm đó.", guest)}
