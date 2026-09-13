@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getAllGuestsWithSlugs } from "@/lib/guests";
+import { readGuests } from "@/lib/guests";
 import { readMessages } from "@/lib/messages";
 import { getEventSettings } from "@/lib/eventSettings";
 
 export async function GET() {
-  const guests = await getAllGuestsWithSlugs();
+  const guests = await readGuests();
   const messages = (await readMessages())
     .map((message, index) => ({ ...message, index }))
     .reverse();

@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 type Guest = {
+  id: number;
   slug: string;
   name: string;
   displayName: string;
@@ -30,7 +31,7 @@ type EventSettingsForm = {
   contactPhone: string;
 };
 
-const emptyForm = { name: "", displayName: "", salutation: "", selfRef: "" };
+const emptyForm = { slug: "", name: "", displayName: "", salutation: "", selfRef: "" };
 const emptyEventSettings: EventSettingsForm = {
   date: "",
   startTime: "",
@@ -57,8 +58,11 @@ export default function AdminPage() {
   const [origin, setOrigin] = useState("");
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
-  const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState(emptyForm);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const [addGuestError, setAddGuestError] = useState<string | null>(null);
 
   const [newGuest, setNewGuest] = useState(emptyForm);
   const [addingGuest, setAddingGuest] = useState(false);
@@ -121,6 +125,7 @@ export default function AdminPage() {
     if (!newGuest.name.trim() || !newGuest.displayName.trim()) return;
 
     setAddingGuest(true);
+    setAddGuestError(null);
     const res = await fetch("/api/admin/guests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -131,12 +136,17 @@ export default function AdminPage() {
     if (res.ok) {
       setNewGuest(emptyForm);
       void loadData();
+    } else {
+      const data = await res.json().catch(() => null);
+      setAddGuestError(data?.error ?? "Có lỗi xảy ra, thử lại nhé.");
     }
   }
 
   function startEdit(guest: Guest) {
-    setEditingSlug(guest.slug);
+    setEditingId(guest.id);
+    setEditError(null);
     setEditForm({
+      slug: guest.slug,
       name: guest.name,
       displayName: guest.displayName,
       salutation: guest.salutation,
@@ -144,18 +154,24 @@ export default function AdminPage() {
     });
   }
 
-  async function saveEdit(slug: string) {
-    await fetch(`/api/admin/guests/${slug}`, {
+  async function saveEdit(id: number) {
+    setEditError(null);
+    const res = await fetch(`/api/admin/guests/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(editForm),
     });
-    setEditingSlug(null);
-    void loadData();
+    if (res.ok) {
+      setEditingId(null);
+      void loadData();
+    } else {
+      const data = await res.json().catch(() => null);
+      setEditError(data?.error ?? "Có lỗi xảy ra, thử lại nhé.");
+    }
   }
 
   async function toggleActive(guest: Guest) {
-    await fetch(`/api/admin/guests/${guest.slug}`, {
+    await fetch(`/api/admin/guests/${guest.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: !guest.active }),
@@ -315,12 +331,20 @@ export default function AdminPage() {
               <div className="mt-4 flex flex-col gap-3">
                 {guests.map((guest) => (
                   <div
-                    key={guest.slug}
+                    key={guest.id}
                     className="rounded-xl border border-[#e7d3ad] bg-[#fffdf9] p-4"
                   >
-                    {editingSlug === guest.slug ? (
+                    {editingId === guest.id ? (
                       <div className="flex flex-col gap-2">
                         <div className="grid grid-cols-2 gap-2">
+                          <input
+                            value={editForm.slug}
+                            onChange={(e) =>
+                              setEditForm((f) => ({ ...f, slug: e.target.value }))
+                            }
+                            placeholder="Đường link (VD: anh-minh)"
+                            className="focus-ring col-span-2 rounded-lg border border-[#d8bf8e] p-2 text-sm"
+                          />
                           <input
                             value={editForm.name}
                             onChange={(e) =>
@@ -354,15 +378,19 @@ export default function AdminPage() {
                             className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm"
                           />
                         </div>
+                        {editError && <p className="text-xs text-maroon">{editError}</p>}
                         <div className="mt-1 flex gap-2">
                           <button
-                            onClick={() => saveEdit(guest.slug)}
+                            onClick={() => saveEdit(guest.id)}
                             className="focus-ring rounded-full bg-[#5c0c0d] px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-warm-white hover:bg-[#4c0709]"
                           >
                             Lưu
                           </button>
                           <button
-                            onClick={() => setEditingSlug(null)}
+                            onClick={() => {
+                              setEditingId(null);
+                              setEditError(null);
+                            }}
                             className="focus-ring rounded-full border border-[#d8bf8e] px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#6b6058]"
                           >
                             Hủy
@@ -423,6 +451,12 @@ export default function AdminPage() {
                 className="mt-5 grid grid-cols-1 gap-2 border-t border-[#eee] pt-5 sm:grid-cols-2"
               >
                 <input
+                  value={newGuest.slug}
+                  onChange={(e) => setNewGuest((f) => ({ ...f, slug: e.target.value }))}
+                  placeholder="Đường link (VD: anh-minh) — để trống sẽ tự tạo"
+                  className="focus-ring col-span-1 rounded-lg border border-[#d8bf8e] p-2 text-sm sm:col-span-2"
+                />
+                <input
                   required
                   value={newGuest.name}
                   onChange={(e) => setNewGuest((f) => ({ ...f, name: e.target.value }))}
@@ -452,6 +486,9 @@ export default function AdminPage() {
                   placeholder='Huy tự xưng là gì (VD "em")'
                   className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm"
                 />
+                {addGuestError && (
+                  <p className="text-xs text-maroon sm:col-span-2">{addGuestError}</p>
+                )}
                 <button
                   type="submit"
                   disabled={addingGuest}

@@ -1,6 +1,8 @@
 import { getSupabase } from "@/lib/supabase";
 
 export type GuestEntry = {
+  id: number;
+  slug: string;
   name: string;
   displayName: string;
   salutation: string;
@@ -8,9 +10,10 @@ export type GuestEntry = {
   active: boolean;
 };
 
-export type Guest = GuestEntry & { slug: string };
+export type Guest = GuestEntry;
 
 export const genericGuest: Guest = {
+  id: 0,
   slug: "",
   name: "",
   displayName: "Bạn",
@@ -19,7 +22,28 @@ export const genericGuest: Guest = {
   active: true,
 };
 
+const RESERVED_SLUGS = new Set(["admin", "api", "loi-nhan", "xem-loi-moi"]);
+
+/** Trims/lowercases/dash-ifies whatever the admin types, so "Đức Anh" or
+ * "  duc anh " both become a clean, URL-safe slug like "duc-anh". */
+export function slugify(input: string): string {
+  return input
+    .replace(/đ/gi, "d")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function isReservedSlug(slug: string): boolean {
+  return RESERVED_SLUGS.has(slug);
+}
+
 type GuestRow = {
+  id: number;
+  slug: string;
   name: string;
   display_name: string;
   salutation: string;
@@ -27,61 +51,86 @@ type GuestRow = {
   active: boolean;
 };
 
-/**
- * Slug is a guest's 1-based position among rows ordered by `id`, not a
- * stored field — so a new guest just gets appended, no numbering by hand.
- * writeGuests replaces the whole table so the array order it's given always
- * becomes the new `id` order. Never reorder or delete existing entries, or
- * everyone's link after that point shifts; set "active": false to retire a
- * guest instead.
- */
-export async function readGuests(): Promise<GuestEntry[]> {
-  const { data, error } = await getSupabase()
-    .from("guests")
-    .select("name, display_name, salutation, self_ref, active")
-    .order("id", { ascending: true });
-  if (error) throw error;
-
-  return (data as GuestRow[]).map((row) => ({
+function fromRow(row: GuestRow): GuestEntry {
+  return {
+    id: row.id,
+    slug: row.slug,
     name: row.name,
     displayName: row.display_name,
     salutation: row.salutation,
     selfRef: row.self_ref,
     active: row.active,
-  }));
+  };
 }
 
-export async function writeGuests(guests: GuestEntry[]): Promise<void> {
-  const supabase = getSupabase();
+const GUEST_COLUMNS = "id, slug, name, display_name, salutation, self_ref, active";
 
-  const { error: deleteError } = await supabase.from("guests").delete().gte("id", 0);
-  if (deleteError) throw deleteError;
-
-  if (guests.length === 0) return;
-
-  const { error: insertError } = await supabase.from("guests").insert(
-    guests.map((guest) => ({
-      name: guest.name,
-      display_name: guest.displayName,
-      salutation: guest.salutation,
-      self_ref: guest.selfRef,
-      active: guest.active,
-    }))
-  );
-  if (insertError) throw insertError;
+export async function readGuests(): Promise<GuestEntry[]> {
+  const { data, error } = await getSupabase()
+    .from("guests")
+    .select(GUEST_COLUMNS)
+    .order("id", { ascending: true });
+  if (error) throw error;
+  return (data as GuestRow[]).map(fromRow);
 }
 
 export async function getGuestBySlug(slug: string): Promise<Guest> {
-  const index = Number(slug);
-  if (!Number.isInteger(index) || index < 1) return genericGuest;
+  if (!slug) return genericGuest;
 
-  const entry = (await readGuests())[index - 1];
-  if (!entry || !entry.active) return genericGuest;
+  const { data, error } = await getSupabase()
+    .from("guests")
+    .select(GUEST_COLUMNS)
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data || !(data as GuestRow).active) return genericGuest;
 
-  return { ...entry, slug: String(index) };
+  return fromRow(data as GuestRow);
 }
 
-export async function getAllGuestsWithSlugs(): Promise<Guest[]> {
-  const guests = await readGuests();
-  return guests.map((guest, i) => ({ ...guest, slug: String(i + 1) }));
+export type NewGuestInput = {
+  slug: string;
+  name: string;
+  displayName: string;
+  salutation: string;
+  selfRef: string;
+};
+
+export async function createGuest(input: NewGuestInput): Promise<GuestEntry> {
+  const { data, error } = await getSupabase()
+    .from("guests")
+    .insert({
+      slug: input.slug,
+      name: input.name,
+      display_name: input.displayName,
+      salutation: input.salutation,
+      self_ref: input.selfRef,
+      active: true,
+    })
+    .select(GUEST_COLUMNS)
+    .single();
+  if (error) throw error;
+  return fromRow(data as GuestRow);
+}
+
+export type GuestPatch = Partial<{
+  slug: string;
+  name: string;
+  displayName: string;
+  salutation: string;
+  selfRef: string;
+  active: boolean;
+}>;
+
+export async function updateGuestById(id: number, patch: GuestPatch): Promise<void> {
+  const row: Record<string, unknown> = {};
+  if (patch.slug !== undefined) row.slug = patch.slug;
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.displayName !== undefined) row.display_name = patch.displayName;
+  if (patch.salutation !== undefined) row.salutation = patch.salutation;
+  if (patch.selfRef !== undefined) row.self_ref = patch.selfRef;
+  if (patch.active !== undefined) row.active = patch.active;
+
+  const { error } = await getSupabase().from("guests").update(row).eq("id", id);
+  if (error) throw error;
 }
