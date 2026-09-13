@@ -337,14 +337,17 @@ export default function AdminPage() {
                     {editingId === guest.id ? (
                       <div className="flex flex-col gap-2">
                         <div className="grid grid-cols-2 gap-2">
-                          <input
-                            value={editForm.slug}
-                            onChange={(e) =>
-                              setEditForm((f) => ({ ...f, slug: e.target.value }))
-                            }
-                            placeholder="Đường link (VD: anh-minh)"
-                            className="focus-ring col-span-2 rounded-lg border border-[#d8bf8e] p-2 text-sm"
-                          />
+                          <label className="col-span-2 flex flex-col gap-1 text-xs font-semibold text-[#6b6058]">
+                            Đường link riêng (URL) — vd: {origin}/
+                            <input
+                              value={editForm.slug}
+                              onChange={(e) =>
+                                setEditForm((f) => ({ ...f, slug: e.target.value }))
+                              }
+                              placeholder="anh-minh"
+                              className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                            />
+                          </label>
                           <input
                             value={editForm.name}
                             onChange={(e) =>
@@ -450,12 +453,15 @@ export default function AdminPage() {
                 onSubmit={handleAddGuest}
                 className="mt-5 grid grid-cols-1 gap-2 border-t border-[#eee] pt-5 sm:grid-cols-2"
               >
-                <input
-                  value={newGuest.slug}
-                  onChange={(e) => setNewGuest((f) => ({ ...f, slug: e.target.value }))}
-                  placeholder="Đường link (VD: anh-minh) — để trống sẽ tự tạo"
-                  className="focus-ring col-span-1 rounded-lg border border-[#d8bf8e] p-2 text-sm sm:col-span-2"
-                />
+                <label className="flex flex-col gap-1 text-xs font-semibold text-[#6b6058] sm:col-span-2">
+                  Đường link riêng (URL) — vd: {origin}/
+                  <input
+                    value={newGuest.slug}
+                    onChange={(e) => setNewGuest((f) => ({ ...f, slug: e.target.value }))}
+                    placeholder="anh-minh (để trống sẽ tự tạo từ tên hiển thị)"
+                    className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                  />
+                </label>
                 <input
                   required
                   value={newGuest.name}
