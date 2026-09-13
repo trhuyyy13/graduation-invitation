@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { adminSessionToken } from "@/lib/adminSession";
 
 const COOKIE_NAME = "hust_admin";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/admin/login" || pathname === "/api/admin/login") {
@@ -11,7 +12,7 @@ export function middleware(request: NextRequest) {
 
   const password = process.env.ADMIN_PASSWORD;
   const cookie = request.cookies.get(COOKIE_NAME)?.value;
-  const authorized = !!password && cookie === password;
+  const authorized = !!password && !!cookie && cookie === (await adminSessionToken(password));
 
   if (authorized) return NextResponse.next();
 

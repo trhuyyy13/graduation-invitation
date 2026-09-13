@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { adminSessionToken } from "@/lib/adminSession";
 
 const COOKIE_NAME = "hust_admin";
 
@@ -12,8 +13,9 @@ export async function POST(request: Request) {
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(COOKIE_NAME, password, {
+  res.cookies.set(COOKIE_NAME, await adminSessionToken(password), {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
