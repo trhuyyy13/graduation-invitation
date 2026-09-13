@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { adminSessionToken } from "@/lib/adminSession";
+import { verifyAndRotateSession } from "@/lib/adminSession";
 
 const COOKIE_NAME = "hust_admin";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -10,19 +11,29 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const password = process.env.ADMIN_PASSWORD;
   const cookie = request.cookies.get(COOKIE_NAME)?.value;
-  const authorized = !!password && !!cookie && cookie === (await adminSessionToken(password));
+  const session = cookie ? await verifyAndRotateSession(cookie) : { valid: false };
 
-  if (authorized) return NextResponse.next();
-
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.valid) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const loginUrl = new URL("/admin/login", request.url);
+    loginUrl.searchParams.set("from", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  const loginUrl = new URL("/admin/login", request.url);
-  loginUrl.searchParams.set("from", pathname);
-  return NextResponse.redirect(loginUrl);
+  const response = NextResponse.next();
+  if (session.newToken) {
+    response.cookies.set(COOKIE_NAME, session.newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: COOKIE_MAX_AGE,
+    });
+  }
+  return response;
 }
 
 export const config = {

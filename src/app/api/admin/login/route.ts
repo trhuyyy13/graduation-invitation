@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminSessionToken } from "@/lib/adminSession";
+import { createAdminSession } from "@/lib/adminSession";
 
 const COOKIE_NAME = "hust_admin";
 
@@ -12,8 +12,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sai mật khẩu." }, { status: 401 });
   }
 
+  const token = await createAdminSession();
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(COOKIE_NAME, await adminSessionToken(password), {
+  res.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
