@@ -3,7 +3,6 @@ import {
   GraduationCap,
   Calendar,
   MapPin,
-  Map,
   Phone,
   ArrowRight,
   MessageCircleHeart,
@@ -11,6 +10,7 @@ import {
 import CardBackdrop from "./CardBackdrop";
 import RevealOnScroll from "./RevealOnScroll";
 import Countdown from "./Countdown";
+import MapPreviewButton from "./MapPreviewButton";
 import { eventConfig } from "@/config/event";
 import { getEventSettings } from "@/lib/eventSettings";
 import type { Guest } from "@/lib/guests";
@@ -137,15 +137,10 @@ export default async function EventDate({
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
           </a>
 
-          <a
-            href="/images/map/hust-c2-campus-map.png"
-            target="_blank"
-            rel="noreferrer"
+          <MapPreviewButton
+            imageSrc="/images/map/hust-c2-campus-map.png"
             className="focus-ring inline-flex min-h-[48px] items-center justify-center gap-1 whitespace-nowrap rounded-full bg-[#5c0c0d] px-2 text-[0.6rem] font-semibold uppercase tracking-[0.05em] text-warm-white shadow-[0_10px_24px_rgba(30,6,6,0.35)] transition-colors hover:bg-[#4c0709] sm:gap-1.5 sm:px-3 sm:text-[0.65rem] sm:tracking-[0.12em]"
-          >
-            Map HUST
-            <Map className="h-4 w-4 shrink-0" aria-hidden />
-          </a>
+          />
         </div>
 
         <Link
