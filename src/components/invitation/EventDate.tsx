@@ -141,9 +141,9 @@ export default async function EventDate({
             href="/images/map/hust-c2-campus-map.png"
             target="_blank"
             rel="noreferrer"
-            className="focus-ring inline-flex min-h-[48px] items-center justify-center gap-1 whitespace-nowrap rounded-full border border-maroon/40 bg-transparent px-2 text-[0.6rem] font-semibold uppercase tracking-[0.05em] text-maroon shadow-[0_6px_16px_rgba(60,20,10,0.1)] transition-colors hover:bg-maroon hover:text-warm-white sm:gap-1.5 sm:px-3 sm:text-[0.65rem] sm:tracking-[0.12em]"
+            className="focus-ring inline-flex min-h-[48px] items-center justify-center gap-1 whitespace-nowrap rounded-full bg-[#5c0c0d] px-2 text-[0.6rem] font-semibold uppercase tracking-[0.05em] text-warm-white shadow-[0_10px_24px_rgba(30,6,6,0.35)] transition-colors hover:bg-[#4c0709] sm:gap-1.5 sm:px-3 sm:text-[0.65rem] sm:tracking-[0.12em]"
           >
-            Xem map
+            Map HUST
             <Map className="h-4 w-4 shrink-0" aria-hidden />
           </a>
         </div>
