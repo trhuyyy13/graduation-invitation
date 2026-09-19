@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import {
+  attendanceOptions,
+  getAttendanceLabel,
+  type AttendanceStatus,
+} from "@/lib/attendance";
 
 type Guest = {
   id: number;
@@ -18,6 +23,7 @@ type StoredMessage = {
   slug: string;
   name: string;
   message: string;
+  attendance: AttendanceStatus | null;
   submittedAt: string;
 };
 
@@ -29,7 +35,11 @@ type EventSettingsForm = {
   university: string;
   address: string;
   contactPhone: string;
+  contactPhone2: string;
 };
+
+const GUESTS_PER_PAGE = 10;
+const MESSAGES_PER_PAGE = 10;
 
 const emptyForm = { slug: "", name: "", displayName: "", salutation: "", selfRef: "" };
 const emptyEventSettings: EventSettingsForm = {
@@ -40,6 +50,7 @@ const emptyEventSettings: EventSettingsForm = {
   university: "",
   address: "",
   contactPhone: "",
+  contactPhone2: "",
 };
 
 function formatDate(iso: string) {
@@ -70,14 +81,76 @@ export default function AdminPage() {
   const [eventSettings, setEventSettings] = useState<EventSettingsForm>(emptyEventSettings);
   const [savingEventSettings, setSavingEventSettings] = useState(false);
   const [eventSettingsSaved, setEventSettingsSaved] = useState(false);
+  const [attendanceTab, setAttendanceTab] = useState<AttendanceStatus | "all">("all");
+
+  const [guestSearch, setGuestSearch] = useState("");
+  const [guestPage, setGuestPage] = useState(1);
+  const [messagePage, setMessagePage] = useState(1);
+
+  const filteredGuests = useMemo(() => {
+    const q = guestSearch.trim().toLowerCase();
+    if (!q) return guests;
+    return guests.filter((guest) =>
+      [guest.name, guest.displayName, guest.slug].some((field) =>
+        field.toLowerCase().includes(q)
+      )
+    );
+  }, [guests, guestSearch]);
+
+  const guestTotalPages = Math.max(1, Math.ceil(filteredGuests.length / GUESTS_PER_PAGE));
+  const pagedGuests = filteredGuests.slice(
+    (guestPage - 1) * GUESTS_PER_PAGE,
+    guestPage * GUESTS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setGuestPage(1);
+  }, [guestSearch]);
+
+  useEffect(() => {
+    setGuestPage((p) => Math.min(p, guestTotalPages));
+  }, [guestTotalPages]);
+
+  const messageTotalPages = Math.max(1, Math.ceil(messages.length / MESSAGES_PER_PAGE));
+  const pagedMessages = messages.slice(
+    (messagePage - 1) * MESSAGES_PER_PAGE,
+    messagePage * MESSAGES_PER_PAGE
+  );
+
+  useEffect(() => {
+    setMessagePage((p) => Math.min(p, messageTotalPages));
+  }, [messageTotalPages]);
+
+  const attendanceResponses = useMemo(() => {
+    const guestsBySlug = new Map(guests.map((guest) => [guest.slug, guest]));
+
+    return messages
+      .filter((message) => message.attendance)
+      .map((message) => {
+        const guest = message.slug ? guestsBySlug.get(message.slug) : undefined;
+        return {
+          ...message,
+          guestId: guest?.id ?? null,
+          resolvedName: guest
+            ? `${guest.displayName} (${guest.name})`
+            : message.name || "Khách chưa có link riêng",
+        };
+      });
+  }, [guests, messages]);
+
+  const visibleAttendanceResponses = attendanceResponses.filter(
+    (response) => attendanceTab === "all" || response.attendance === attendanceTab
+  );
 
   useEffect(() => {
     setOrigin(window.location.origin);
     void loadData();
   }, []);
 
-  async function loadData() {
-    setLoading(true);
+  // silent=true is used to refresh data after an edit without tearing down
+  // and rebuilding the whole page (which caused a jarring flash/scroll jump).
+  async function loadData({ silent = false }: { silent?: boolean } = {}) {
+    if (!silent) setLoading(true);
     const res = await fetch("/api/admin/data");
     if (res.ok) {
       const data = await res.json();
@@ -93,10 +166,11 @@ export default function AdminPage() {
           university: s.university,
           address: s.address,
           contactPhone: s.contactPhone,
+          contactPhone2: s.contactPhone2 ?? "",
         });
       }
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   }
 
   async function handleSaveEventSettings(event: FormEvent) {
@@ -135,7 +209,7 @@ export default function AdminPage() {
 
     if (res.ok) {
       setNewGuest(emptyForm);
-      void loadData();
+      void loadData({ silent: true });
     } else {
       const data = await res.json().catch(() => null);
       setAddGuestError(data?.error ?? "Có lỗi xảy ra, thử lại nhé.");
@@ -163,7 +237,7 @@ export default function AdminPage() {
     });
     if (res.ok) {
       setEditingId(null);
-      void loadData();
+      void loadData({ silent: true });
     } else {
       const data = await res.json().catch(() => null);
       setEditError(data?.error ?? "Có lỗi xảy ra, thử lại nhé.");
@@ -171,12 +245,21 @@ export default function AdminPage() {
   }
 
   async function toggleActive(guest: Guest) {
-    await fetch(`/api/admin/guests/${guest.id}`, {
+    const nextActive = !guest.active;
+    setGuests((list) =>
+      list.map((g) => (g.id === guest.id ? { ...g, active: nextActive } : g))
+    );
+    const res = await fetch(`/api/admin/guests/${guest.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !guest.active }),
+      body: JSON.stringify({ active: nextActive }),
     });
-    void loadData();
+    if (!res.ok) {
+      // revert on failure
+      setGuests((list) =>
+        list.map((g) => (g.id === guest.id ? { ...g, active: guest.active } : g))
+      );
+    }
   }
 
   async function copyLink(slug: string) {
@@ -191,8 +274,13 @@ export default function AdminPage() {
   }
 
   async function deleteMessage(index: number) {
-    await fetch(`/api/admin/messages/${index}`, { method: "DELETE" });
-    void loadData();
+    const previous = messages;
+    setMessages((list) => list.filter((m) => m.index !== index));
+    const res = await fetch(`/api/admin/messages/${index}`, { method: "DELETE" });
+    if (!res.ok) {
+      // revert on failure
+      setMessages(previous);
+    }
   }
 
   return (
@@ -299,9 +387,21 @@ export default function AdminPage() {
                   Số điện thoại liên hệ
                   <input
                     required
+                    placeholder="VD: 0865505899 (Huy)"
                     value={eventSettings.contactPhone}
                     onChange={(e) =>
                       setEventSettings((f) => ({ ...f, contactPhone: e.target.value }))
+                    }
+                    className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-semibold text-[#6b6058]">
+                  Số điện thoại liên hệ (thêm, không bắt buộc)
+                  <input
+                    placeholder="VD: 0123456789 (Đông)"
+                    value={eventSettings.contactPhone2}
+                    onChange={(e) =>
+                      setEventSettings((f) => ({ ...f, contactPhone2: e.target.value }))
                     }
                     className="focus-ring rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
                   />
@@ -328,8 +428,20 @@ export default function AdminPage() {
                 Khách mời ({guests.length})
               </h2>
 
+              <input
+                value={guestSearch}
+                onChange={(e) => setGuestSearch(e.target.value)}
+                placeholder="Tìm khách theo tên, tên hiển thị hoặc link..."
+                className="focus-ring mt-3 w-full rounded-lg border border-[#d8bf8e] p-2 text-sm font-normal text-[#2b2320]"
+              />
+
               <div className="mt-4 flex flex-col gap-3">
-                {guests.map((guest) => (
+                {pagedGuests.length === 0 && (
+                  <p className="text-sm text-[#6b6058]">
+                    {guestSearch ? "Không tìm thấy khách nào." : "Chưa có khách mời nào."}
+                  </p>
+                )}
+                {pagedGuests.map((guest) => (
                   <div
                     key={guest.id}
                     className="rounded-xl border border-[#e7d3ad] bg-[#fffdf9] p-4"
@@ -449,6 +561,30 @@ export default function AdminPage() {
                 ))}
               </div>
 
+              {guestTotalPages > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setGuestPage((p) => Math.max(1, p - 1))}
+                    disabled={guestPage <= 1}
+                    className="focus-ring rounded-full border border-[#d8bf8e] px-3 py-1.5 text-xs font-semibold text-[#6b6058] hover:border-maroon hover:text-maroon disabled:opacity-40"
+                  >
+                    Trước
+                  </button>
+                  <span className="text-xs text-[#6b6058]">
+                    Trang {guestPage}/{guestTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGuestPage((p) => Math.min(guestTotalPages, p + 1))}
+                    disabled={guestPage >= guestTotalPages}
+                    className="focus-ring rounded-full border border-[#d8bf8e] px-3 py-1.5 text-xs font-semibold text-[#6b6058] hover:border-maroon hover:text-maroon disabled:opacity-40"
+                  >
+                    Sau
+                  </button>
+                </div>
+              )}
+
               <form
                 onSubmit={handleAddGuest}
                 className="mt-5 grid grid-cols-1 gap-2 border-t border-[#eee] pt-5 sm:grid-cols-2"
@@ -515,7 +651,7 @@ export default function AdminPage() {
                 <p className="mt-3 text-sm text-[#6b6058]">Chưa có lưu bút nào.</p>
               ) : (
                 <div className="mt-4 flex flex-col gap-3">
-                  {messages.map((msg) => (
+                  {pagedMessages.map((msg) => (
                     <div
                       key={msg.index}
                       className="rounded-xl border border-[#e7d3ad] bg-[#fffdf9] p-4"
@@ -527,6 +663,11 @@ export default function AdminPage() {
                             {formatDate(msg.submittedAt)}
                             {msg.slug && ` · slug ${msg.slug}`}
                           </p>
+                          {msg.attendance && (
+                            <p className="mt-1 text-xs font-semibold text-maroon">
+                              {getAttendanceLabel(msg.attendance)}
+                            </p>
+                          )}
                         </div>
                         <button
                           onClick={() => deleteMessage(msg.index)}
@@ -538,6 +679,102 @@ export default function AdminPage() {
                       <p className="mt-2 whitespace-pre-line text-sm text-[#4d4038]">
                         {msg.message}
                       </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {messageTotalPages > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setMessagePage((p) => Math.max(1, p - 1))}
+                    disabled={messagePage <= 1}
+                    className="focus-ring rounded-full border border-[#d8bf8e] px-3 py-1.5 text-xs font-semibold text-[#6b6058] hover:border-maroon hover:text-maroon disabled:opacity-40"
+                  >
+                    Trước
+                  </button>
+                  <span className="text-xs text-[#6b6058]">
+                    Trang {messagePage}/{messageTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMessagePage((p) => Math.min(messageTotalPages, p + 1))}
+                    disabled={messagePage >= messageTotalPages}
+                    className="focus-ring rounded-full border border-[#d8bf8e] px-3 py-1.5 text-xs font-semibold text-[#6b6058] hover:border-maroon hover:text-maroon disabled:opacity-40"
+                  >
+                    Sau
+                  </button>
+                </div>
+              )}
+            </section>
+
+            {/* Attendance votes */}
+            <section className="mt-6 rounded-2xl bg-white p-5 shadow-[0_10px_24px_rgba(60,20,10,0.08)] sm:p-6">
+              <h2 className="font-serif text-lg font-semibold text-[#452420]">
+                Phản hồi tham dự ({attendanceResponses.length})
+              </h2>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAttendanceTab("all")}
+                  className={`focus-ring rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${
+                    attendanceTab === "all"
+                      ? "bg-[#5c0c0d] text-warm-white"
+                      : "border border-[#d8bf8e] text-[#6b6058] hover:border-maroon hover:text-maroon"
+                  }`}
+                >
+                  Tất cả ({attendanceResponses.length})
+                </button>
+                {attendanceOptions.map((option) => {
+                  const count = attendanceResponses.filter(
+                    (response) => response.attendance === option.value
+                  ).length;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setAttendanceTab(option.value)}
+                      className={`focus-ring rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${
+                        attendanceTab === option.value
+                          ? "bg-[#5c0c0d] text-warm-white"
+                          : "border border-[#d8bf8e] text-[#6b6058] hover:border-maroon hover:text-maroon"
+                      }`}
+                    >
+                      {option.adminLabel} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {visibleAttendanceResponses.length === 0 ? (
+                <p className="mt-4 text-sm text-[#6b6058]">Chưa có phản hồi trong tab này.</p>
+              ) : (
+                <div className="mt-4 flex flex-col gap-2">
+                  {visibleAttendanceResponses.map((response) => (
+                    <div
+                      key={response.index}
+                      className="rounded-xl border border-[#e7d3ad] bg-[#fffdf9] p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <p className="font-medium text-[#2b2320]">
+                            {response.resolvedName}
+                          </p>
+                          <p className="text-xs text-[#9b774d]">
+                            {response.guestId ? `ID ${response.guestId}` : "Không có ID"}
+                            {response.slug ? ` · slug ${response.slug}` : " · không có slug"}
+                            {" · "}
+                            {formatDate(response.submittedAt)}
+                          </p>
+                        </div>
+                        {response.attendance && (
+                          <span className="rounded-full bg-[#f6efe3] px-3 py-1 text-xs font-semibold text-maroon">
+                            {getAttendanceLabel(response.attendance)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

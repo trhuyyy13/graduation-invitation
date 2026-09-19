@@ -52,7 +52,7 @@ export default function PersonalMessage({
 
       <RevealOnScroll
         delay={0.1}
-        className="mt-8 w-full max-w-[340px] rounded-2xl border border-[#d8bf8e] bg-[#fbf3e7]/95 p-5 text-center shadow-[0_14px_30px_rgba(60,20,10,0.16)] sm:p-7"
+        className="mt-8 ml-[-96px] w-[calc(100%+120px)] max-w-[430px] rounded-2xl border border-[#d8bf8e] bg-[#fbf3e7]/95 p-5 text-center shadow-[0_14px_30px_rgba(60,20,10,0.16)] sm:p-7"
       >
         <CornerAccents />
 

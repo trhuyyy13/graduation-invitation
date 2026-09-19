@@ -96,11 +96,19 @@ export default async function EventDate({
               Liên hệ
             </p>
             <a
-              href={`tel:${settings.contactPhone.replace(/\./g, "")}`}
+              href={`tel:${settings.contactPhone.replace(/[^\d+]/g, "")}`}
               className="focus-ring mt-1 inline-block text-sm font-semibold text-[#2b2320] underline-offset-2 hover:underline"
             >
               {settings.contactPhone}
             </a>
+            {settings.contactPhone2 && (
+              <a
+                href={`tel:${settings.contactPhone2.replace(/[^\d+]/g, "")}`}
+                className="focus-ring mt-1 block text-sm font-semibold text-[#2b2320] underline-offset-2 hover:underline"
+              >
+                {settings.contactPhone2}
+              </a>
+            )}
           </div>
         </div>
       </RevealOnScroll>

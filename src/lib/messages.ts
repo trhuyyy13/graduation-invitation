@@ -1,9 +1,11 @@
 import { getSupabase } from "@/lib/supabase";
+import type { AttendanceStatus } from "@/lib/attendance";
 
 export type StoredMessage = {
   slug: string;
   name: string;
   message: string;
+  attendance: AttendanceStatus | null;
   submittedAt: string;
 };
 
@@ -11,6 +13,7 @@ type MessageRow = {
   slug: string | null;
   name: string;
   message: string;
+  attendance: AttendanceStatus | null;
   submitted_at: string;
 };
 
@@ -22,7 +25,7 @@ type MessageRow = {
 export async function readMessages(): Promise<StoredMessage[]> {
   const { data, error } = await getSupabase()
     .from("messages")
-    .select("slug, name, message, submitted_at")
+    .select("slug, name, message, attendance, submitted_at")
     .order("id", { ascending: true });
   if (error) throw error;
 
@@ -30,6 +33,7 @@ export async function readMessages(): Promise<StoredMessage[]> {
     slug: row.slug ?? "",
     name: row.name,
     message: row.message,
+    attendance: row.attendance,
     submittedAt: row.submitted_at,
   }));
 }
@@ -47,6 +51,7 @@ export async function writeMessages(messages: StoredMessage[]): Promise<void> {
       slug: message.slug,
       name: message.name,
       message: message.message,
+      attendance: message.attendance,
       submitted_at: message.submittedAt,
     }))
   );

@@ -11,6 +11,7 @@ export async function PATCH(request: Request) {
   const university = typeof body?.university === "string" ? body.university.trim() : "";
   const address = typeof body?.address === "string" ? body.address.trim() : "";
   const contactPhone = typeof body?.contactPhone === "string" ? body.contactPhone.trim() : "";
+  const contactPhone2 = typeof body?.contactPhone2 === "string" ? body.contactPhone2.trim() : "";
 
   if (
     !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
@@ -32,6 +33,7 @@ export async function PATCH(request: Request) {
     university,
     address,
     contactPhone,
+    contactPhone2,
   });
 
   return NextResponse.json({ ok: true });

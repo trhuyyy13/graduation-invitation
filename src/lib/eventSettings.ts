@@ -9,6 +9,7 @@ export type EventSettingsInput = {
   university: string;
   address: string;
   contactPhone: string;
+  contactPhone2: string;
 };
 
 export type EventSettings = EventSettingsInput & {
@@ -37,6 +38,7 @@ const defaults: EventSettingsInput = {
   university: eventConfig.university,
   address: eventConfig.address,
   contactPhone: eventConfig.contactPhone,
+  contactPhone2: eventConfig.contactPhone2,
 };
 
 function withDerivedFields(input: EventSettingsInput): EventSettings {
@@ -62,12 +64,13 @@ type SettingsRow = {
   university: string;
   address: string;
   contact_phone: string;
+  contact_phone_2: string | null;
 };
 
 export async function getEventSettings(): Promise<EventSettings> {
   const { data, error } = await getSupabase()
     .from("event_settings")
-    .select("date, start_time, end_time, venue, university, address, contact_phone")
+    .select("date, start_time, end_time, venue, university, address, contact_phone, contact_phone_2")
     .eq("id", 1)
     .maybeSingle();
   if (error) throw error;
@@ -82,6 +85,7 @@ export async function getEventSettings(): Promise<EventSettings> {
     university: row.university,
     address: row.address,
     contactPhone: row.contact_phone,
+    contactPhone2: row.contact_phone_2 ?? "",
   });
 }
 
@@ -96,6 +100,7 @@ export async function updateEventSettings(input: EventSettingsInput): Promise<vo
       university: input.university,
       address: input.address,
       contact_phone: input.contactPhone,
+      contact_phone_2: input.contactPhone2,
     })
     .eq("id", 1);
   if (error) throw error;

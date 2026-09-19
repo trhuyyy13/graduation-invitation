@@ -23,6 +23,7 @@ export const eventConfig = {
   address: "Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội",
   mapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`,
   contactPhone: "0865.505.899",
+  contactPhone2: "",
 
   // {self}/{Self} = how Huy refers to himself with this guest (guest.selfRef);
   // {you}/{You} = how Huy addresses this guest (guest.salutation). See personalize() in PersonalMessage.tsx.

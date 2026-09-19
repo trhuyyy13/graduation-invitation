@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { ArrowRight } from "lucide-react";
+import { attendanceOptions, type AttendanceStatus } from "@/lib/attendance";
 import { eventConfig } from "@/config/event";
 import { personalize } from "@/lib/personalize";
 import type { Guest } from "@/lib/guests";
@@ -9,18 +10,19 @@ import type { Guest } from "@/lib/guests";
 export default function MessageForm({ guest }: { guest: Guest }) {
   const [name, setName] = useState(guest.displayName !== "Bạn" ? guest.displayName : "");
   const [message, setMessage] = useState("");
+  const [attendance, setAttendance] = useState<AttendanceStatus | "">("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!message.trim() || status === "sending") return;
+    if (!message.trim() || !attendance || status === "sending") return;
 
     setStatus("sending");
     try {
       const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: guest.slug, name, message }),
+        body: JSON.stringify({ slug: guest.slug, name, message, attendance }),
       });
       if (!res.ok) throw new Error("request failed");
       setStatus("sent");
@@ -46,12 +48,41 @@ export default function MessageForm({ guest }: { guest: Guest }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <textarea
         required
-        rows={4}
+        rows={8}
         value={message}
         onChange={(event) => setMessage(event.target.value)}
         placeholder="Viết lưu bút của bạn..."
-        className="focus-ring w-full resize-none rounded-lg border border-[#d8bf8e] bg-[#fffdf9] p-3 font-accent text-base italic text-[#4d4038] placeholder:text-[#a8804f]/60 focus:border-maroon"
+        className="focus-ring min-h-[220px] w-full resize-y rounded-lg border border-[#d8bf8e] bg-[#fffdf9] p-4 font-accent text-base italic text-[#4d4038] placeholder:text-[#a8804f]/60 focus:border-maroon"
       />
+
+      <div>
+        <p className="mb-2 text-sm font-medium text-[#4d4038]">
+          {personalize("{you} sẽ có mặt chứ?", guest)}
+        </p>
+        <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-[#d8bf8e] bg-[#fffdf9] p-1.5">
+          {attendanceOptions.map((option) => (
+            <label
+              key={option.value}
+              className={`focus-within:ring-maroon/30 flex min-h-[42px] cursor-pointer items-center justify-center rounded-lg px-2 py-2 text-center text-[0.72rem] font-semibold leading-snug transition-colors focus-within:ring-2 sm:text-xs ${
+                attendance === option.value
+                  ? "bg-[#5c0c0d] text-warm-white shadow-[0_6px_14px_rgba(92,12,13,0.22)]"
+                  : "text-[#6b6058] hover:bg-[#f6efe3] hover:text-maroon"
+              }`}
+            >
+              <input
+                required
+                type="radio"
+                name="attendance"
+                value={option.value}
+                checked={attendance === option.value}
+                onChange={() => setAttendance(option.value)}
+                className="sr-only"
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-[#4d4038]">Tên của bạn</label>
