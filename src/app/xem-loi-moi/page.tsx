@@ -3,6 +3,8 @@ import EventDate from "@/components/invitation/EventDate";
 import PageShell from "@/components/invitation/PageShell";
 import { genericGuest } from "@/lib/guests";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Lễ Tốt Nghiệp Huy Trần — Thông tin sự kiện",
 };
