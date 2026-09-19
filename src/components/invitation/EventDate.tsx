@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { GraduationCap, Calendar, MapPin, Phone, ArrowRight, MessageCircleHeart } from "lucide-react";
+import {
+  GraduationCap,
+  Calendar,
+  MapPin,
+  Map,
+  Phone,
+  ArrowRight,
+  MessageCircleHeart,
+} from "lucide-react";
 import CardBackdrop from "./CardBackdrop";
 import RevealOnScroll from "./RevealOnScroll";
 import Countdown from "./Countdown";
@@ -118,15 +126,27 @@ export default async function EventDate({
       </RevealOnScroll>
 
       <RevealOnScroll delay={0.2} className="flex w-full max-w-[320px] flex-col gap-3">
-        <a
-          href={settings.mapUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="focus-ring mt-6 inline-flex min-h-[48px] w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-[#5c0c0d] px-3 text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-warm-white shadow-[0_10px_24px_rgba(30,6,6,0.35)] transition-colors hover:bg-[#4c0709] sm:gap-2 sm:px-6 sm:text-xs sm:tracking-[0.3em]"
-        >
-          Xem chỉ đường
-          <ArrowRight className="h-4 w-4" aria-hidden />
-        </a>
+        <div className="mt-6 grid grid-cols-2 gap-2">
+          <a
+            href={settings.mapUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="focus-ring inline-flex min-h-[48px] items-center justify-center gap-1 whitespace-nowrap rounded-full bg-[#5c0c0d] px-2 text-[0.6rem] font-semibold uppercase tracking-[0.05em] text-warm-white shadow-[0_10px_24px_rgba(30,6,6,0.35)] transition-colors hover:bg-[#4c0709] sm:gap-1.5 sm:px-3 sm:text-[0.65rem] sm:tracking-[0.12em]"
+          >
+            Chỉ đường
+            <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+          </a>
+
+          <a
+            href="/images/map/hust-c2-campus-map.png"
+            target="_blank"
+            rel="noreferrer"
+            className="focus-ring inline-flex min-h-[48px] items-center justify-center gap-1 whitespace-nowrap rounded-full border border-maroon/40 bg-transparent px-2 text-[0.6rem] font-semibold uppercase tracking-[0.05em] text-maroon shadow-[0_6px_16px_rgba(60,20,10,0.1)] transition-colors hover:bg-maroon hover:text-warm-white sm:gap-1.5 sm:px-3 sm:text-[0.65rem] sm:tracking-[0.12em]"
+          >
+            Xem map
+            <Map className="h-4 w-4 shrink-0" aria-hidden />
+          </a>
+        </div>
 
         <Link
           href={nextHref}
