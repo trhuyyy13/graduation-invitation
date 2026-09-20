@@ -5,9 +5,7 @@ import { getEventSettings } from "@/lib/eventSettings";
 
 export async function GET() {
   const guests = await readGuests();
-  const messages = (await readMessages())
-    .map((message, index) => ({ ...message, index }))
-    .reverse();
+  const messages = (await readMessages()).slice().reverse();
   const eventSettings = await getEventSettings();
 
   return NextResponse.json({ guests, messages, eventSettings });

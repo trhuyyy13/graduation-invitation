@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAttendanceStatus } from "@/lib/attendance";
-import { readMessages, writeMessages } from "@/lib/messages";
+import { addMessage } from "@/lib/messages";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -17,15 +17,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Thiếu phản hồi tham dự." }, { status: 400 });
   }
 
-  const messages = await readMessages();
-  messages.push({
+  await addMessage({
     slug,
     name: name || "Ẩn danh",
     message,
     attendance,
     submittedAt: new Date().toISOString(),
   });
-  await writeMessages(messages);
 
   return NextResponse.json({ ok: true });
 }

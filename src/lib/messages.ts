@@ -2,6 +2,7 @@ import { getSupabase } from "@/lib/supabase";
 import type { AttendanceStatus } from "@/lib/attendance";
 
 export type StoredMessage = {
+  id: number;
   slug: string;
   name: string;
   message: string;
@@ -10,6 +11,7 @@ export type StoredMessage = {
 };
 
 type MessageRow = {
+  id: number;
   slug: string | null;
   name: string;
   message: string;
@@ -17,19 +19,15 @@ type MessageRow = {
   submitted_at: string;
 };
 
-/**
- * Ordered by `id` (insertion order), matching the array index the admin
- * delete route expects. writeMessages replaces the whole table so the array
- * order it's given always becomes the new `id` order.
- */
 export async function readMessages(): Promise<StoredMessage[]> {
   const { data, error } = await getSupabase()
     .from("messages")
-    .select("slug, name, message, attendance, submitted_at")
+    .select("id, slug, name, message, attendance, submitted_at")
     .order("id", { ascending: true });
   if (error) throw error;
 
   return (data as MessageRow[]).map((row) => ({
+    id: row.id,
     slug: row.slug ?? "",
     name: row.name,
     message: row.message,
@@ -38,22 +36,22 @@ export async function readMessages(): Promise<StoredMessage[]> {
   }));
 }
 
-export async function writeMessages(messages: StoredMessage[]): Promise<void> {
-  const supabase = getSupabase();
-
-  const { error: deleteError } = await supabase.from("messages").delete().gte("id", 0);
-  if (deleteError) throw deleteError;
-
-  if (messages.length === 0) return;
-
-  const { error: insertError } = await supabase.from("messages").insert(
-    messages.map((message) => ({
+export async function addMessage(
+  message: Omit<StoredMessage, "id">
+): Promise<void> {
+  const { error } = await getSupabase()
+    .from("messages")
+    .insert({
       slug: message.slug,
       name: message.name,
       message: message.message,
       attendance: message.attendance,
       submitted_at: message.submittedAt,
-    }))
-  );
-  if (insertError) throw insertError;
+    });
+  if (error) throw error;
+}
+
+export async function deleteMessageById(id: number): Promise<void> {
+  const { error } = await getSupabase().from("messages").delete().eq("id", id);
+  if (error) throw error;
 }

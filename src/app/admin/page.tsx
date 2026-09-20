@@ -19,7 +19,7 @@ type Guest = {
 };
 
 type StoredMessage = {
-  index: number;
+  id: number;
   slug: string;
   name: string;
   message: string;
@@ -273,10 +273,10 @@ export default function AdminPage() {
     }
   }
 
-  async function deleteMessage(index: number) {
+  async function deleteMessage(id: number) {
     const previous = messages;
-    setMessages((list) => list.filter((m) => m.index !== index));
-    const res = await fetch(`/api/admin/messages/${index}`, { method: "DELETE" });
+    setMessages((list) => list.filter((m) => m.id !== id));
+    const res = await fetch(`/api/admin/messages/${id}`, { method: "DELETE" });
     if (!res.ok) {
       // revert on failure
       setMessages(previous);
@@ -653,7 +653,7 @@ export default function AdminPage() {
                 <div className="mt-4 flex flex-col gap-3">
                   {pagedMessages.map((msg) => (
                     <div
-                      key={msg.index}
+                      key={msg.id}
                       className="rounded-xl border border-[#e7d3ad] bg-[#fffdf9] p-4"
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -670,7 +670,7 @@ export default function AdminPage() {
                           )}
                         </div>
                         <button
-                          onClick={() => deleteMessage(msg.index)}
+                          onClick={() => deleteMessage(msg.id)}
                           className="focus-ring shrink-0 rounded-full border border-[#d8bf8e] px-3 py-1 text-xs font-semibold text-[#6b6058] hover:border-maroon hover:text-maroon"
                         >
                           Xóa
@@ -754,7 +754,7 @@ export default function AdminPage() {
                 <div className="mt-4 flex flex-col gap-2">
                   {visibleAttendanceResponses.map((response) => (
                     <div
-                      key={response.index}
+                      key={response.id}
                       className="rounded-xl border border-[#e7d3ad] bg-[#fffdf9] p-4"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2">
